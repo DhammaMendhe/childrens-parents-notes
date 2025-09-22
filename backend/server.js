@@ -4,7 +4,7 @@ const connection = require("./dbConnection");
 const routes = require("./routes/index"); // Your routes file
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connection();
@@ -74,7 +74,7 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',

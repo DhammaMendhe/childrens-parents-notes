@@ -1,5 +1,5 @@
 // backend/middleware/auth.js
-const User = require('../models/User');
+const User = require('../models/userModel');
 
 const auth = async (req, res, next) => {
   try {

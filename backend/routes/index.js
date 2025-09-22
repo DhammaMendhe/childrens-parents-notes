@@ -11,8 +11,10 @@ const {
   linkChildToParent
 } = require("../controller/index");
 
-// Authentication middleware (you'll need to implement this)
+// Import essential middleware
 const auth = require("../middleware/auth");
+const { childOnly, parentOnly } = require("../middleware/rolecheck");
+const { validateNote } = require("../middleware/validation");
 
 // User Authentication Routes
 router.post("/register", userRegistration);
@@ -21,12 +23,12 @@ router.post("/login", userLogin);
 // Family Management Routes
 router.post("/link-child-parent", auth, linkChildToParent);
 
-// Notes Routes
-router.post("/notes", auth, createNote);              // Create note (children only)
-router.get("/notes", auth, getNotes);                 // Get notes (role-based)
-router.get("/notes/:noteId", auth, getNoteById);      // Get single note
-router.put("/notes/:noteId", auth, updateNote);      // Update note (children only)
-router.delete("/notes/:noteId", auth, deleteNote);   // Delete note (children only)
+// Notes Routes with middleware
+router.post("/notes", auth, childOnly, validateNote, createNote);
+router.get("/notes", auth, getNotes);
+router.get("/notes/:noteId", auth, getNoteById);
+router.put("/notes/:noteId", auth, childOnly, validateNote, updateNote);
+router.delete("/notes/:noteId", auth, childOnly, deleteNote);
 
 // User Profile Routes
 router.get("/profile", auth, async (req, res) => {
@@ -50,16 +52,9 @@ router.get("/profile", auth, async (req, res) => {
   }
 });
 
-// Get Children (for parents)
-router.get("/children", auth, async (req, res) => {
+// Get Children (for parents) - with parentOnly middleware
+router.get("/children", auth, parentOnly, async (req, res) => {
   try {
-    if (req.user.role !== 'parent') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only parents can access this endpoint'
-      });
-    }
-
     const User = require("../models/User");
     const parent = await User.findById(req.user.id)
       .populate('children', 'firstName lastName username email dateOfBirth');
@@ -77,16 +72,9 @@ router.get("/children", auth, async (req, res) => {
   }
 });
 
-// Get Parents (for children)
-router.get("/parents", auth, async (req, res) => {
+// Get Parents (for children) - with childOnly middleware
+router.get("/parents", auth, childOnly, async (req, res) => {
   try {
-    if (req.user.role !== 'child') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only children can access this endpoint'
-      });
-    }
-
     const User = require("../models/User");
     const child = await User.findById(req.user.id)
       .populate('parents', 'firstName lastName username email');
@@ -186,16 +174,9 @@ router.get("/search/:searchTerm", auth, async (req, res) => {
   }
 });
 
-// Mark Note as Complete/Incomplete (children only)
-router.patch("/notes/:noteId/toggle-complete", auth, async (req, res) => {
+// Mark Note as Complete/Incomplete (children only) - with childOnly middleware
+router.patch("/notes/:noteId/toggle-complete", auth, childOnly, async (req, res) => {
   try {
-    if (req.user.role !== 'child') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only children can mark notes as complete'
-      });
-    }
-
     const Note = require("../models/Note");
     const note = await Note.findOne({ 
       _id: req.params.noteId, 

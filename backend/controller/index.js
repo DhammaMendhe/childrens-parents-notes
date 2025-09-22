@@ -333,4 +333,54 @@ async function getNoteById(req, res) {
   }
 }
 
-module.exports = {userRegistration,userLogin,createNote,updateNote,getNoteById,getNotes,deleteNote}
+// Function to link a child to a parent
+async function linkChildToParent(req, res) {
+  try {
+    const { childId, parentId } = req.body;
+
+    // Find the child and parent users
+    const child = await User.findById(childId);
+    const parent = await User.findById(parentId);
+
+    if (!child || !parent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Child or parent not found'
+      });
+    }
+
+    if (child.role !== 'child' || parent.role !== 'parent') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid roles for linking'
+      });
+    }
+
+    // Update child's parentId
+    child.parentId = parentId;
+    await child.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Child linked to parent successfully',
+      data: child
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error linking child to parent',
+      error: error.message
+    });
+  }
+}
+
+module.exports = {
+  userRegistration,
+  userLogin,
+  createNote,
+  updateNote,
+  getNoteById,
+  getNotes,
+  deleteNote,
+  linkChildToParent
+}
