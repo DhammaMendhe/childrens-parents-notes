@@ -1,6 +1,6 @@
-// src/components/Auth/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +11,7 @@ const Login = () => {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
+  const { login } = useAuth(); // Use the login function from context
 
   const handleChange = (e) => {
     setFormData({
@@ -34,22 +35,25 @@ const Login = () => {
       });
 
       const data = await response.json();
+      console.log('Login response:', data); // Debug log
 
       if (data.success) {
-        // Store user data in localStorage
-        localStorage.setItem('token', data.user.id); // Simple token for now
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Use the login function from context
+        login(data.user);
         
-        // Redirect based on role
+        // Redirect based on role with force refresh
         if (data.user.role === 'child') {
-          navigate('/dashboard');
-        } else {
-          navigate('/parent-dashboard');
+          console.log('Redirecting to child dashboard');
+          navigate('/dashboard', { replace: true });
+        } else if (data.user.role === 'parent') {
+          console.log('Redirecting to parent dashboard');
+          navigate('/parent-dashboard', { replace: true });
         }
       } else {
         setError(data.message || 'Login failed');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
